@@ -6,26 +6,26 @@ Predict survival of passengers aboard the Titanic based on passenger characteris
 
 Several of these approaches to feature engineering have been borrowed from existing Kaggle kernels, plus a few additions to try to improve accuracy of the predictive models.
 
-###Family Size
+### Family Size
 
-###Title
+### Title
 
-###Number of Rooms
+### Number of Rooms
 
-###Missing Data: Age
+### Missing Data: Age
 
-###Missing Data: Cabin
+### Missing Data: Cabin
 
-###Missing Data: Port of Embarkation
+### Missing Data: Port of Embarkation
 
-##Building a Predictive Model
+## Building a Predictive Model
 
-###Classification trees
+### Classification trees
 
 
 
-##Build final model
+## Build final model
 
-###Cross-validation of entire training data set
+### Cross-validation of entire training data set
 
 caret package (Classification and Regression Training)
