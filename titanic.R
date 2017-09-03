@@ -1,8 +1,9 @@
 library(data.table)
 library(ggplot2)
 library(dplyr)
+require(tree) #classification trees
 train <- fread("~/R Projects - Data Science/titanic/data/train.csv", 
-               stringsAsFactors = T)
+               stringsAsFactors = T, na.strings=c(""))
 
 str(train)
 
@@ -31,6 +32,7 @@ for (i in 1:length(train$cabinDeck)) {
     train[i, "cabinDeck"] <- NA
   }
 }
+train$cabinDeck <- as.factor(train$cabinDeck)
 
 #Fare
 #1. plot out age vs fare.  Nothing obvious here.
@@ -60,15 +62,37 @@ ggplot(train, aes(familySize, Fare)) + geom_point()
 
 #TODO: What about family groups that are unrelated (same cabin, or same ticket)
 
-#Work on missing data points.  
-#1. There are a few without embarkation data
+#Work on missing data points. 2 Embarked, 177 Age, 687 Cabin/numrooms/cabinDeck.
+missingData <- sapply(train,function(x) sum(is.na(x)))
+
+#1. There are 2 passengers without embarkation data
 ggplot(train, aes(x = Embarked, y = Fare, Fill = factor(Pclass))) + geom_boxplot()
 #Looking at median fare for each class, from each embarkation point, 
-#we can prob infer that the missing data points are all from embarkation pt C
+#we can infer that the missing data points are all from embarkation pt C
 train[c(62, 830), "Embarked"] <- "C"
 
-#2. TThere are 177 missing Age points.
-#3. Lots of missing rooms.. can we find anything there?
+#2. There are 177 missing Age points.  Predict age?
+ageData <- train %>% filter(!is.na(Age))
+noAgeData <- train %>% filter(is.na(Age))
+ageModel <- glm(Age ~ Survived + Pclass + SibSp, 
+               data=ageData)
+summary(ageModel)
+#Apply model only to is.na(Age) passengers
+for (i in 1:length(noAgeData$Age)) {
+    noAgeData[i, "Age"] <- predict(ageModel, newdata = noAgeData[i,])
+}
+#plot hist of predicted ages versus actual ages to see how off you are
+ggplot(ageData, aes(Age)) + geom_histogram(breaks=seq(0, 80, by = 2))
+ggplot(noAgeData, aes(Age)) + geom_histogram(breaks=seq(0, 80, by = 2))
+#Not perfect, but.. usable.  Better than nothing.  Revisit model later.
+#Apply that model to train age set
+for (i in 1:length(train$Age)) {
+  if (is.na(train[i, "Age"]) == T) {
+    train[i, "Age"] <- predict(ageModel)
+  }
+}
+
+#3. 687 of missing rooms.. can we find anything there?
 #4. What can we do with Ticket?  
 #5. Any change in survival for families of all adults (all siblings; or
 #non-familial friends sharing a cabin) relative to families with
@@ -77,8 +101,33 @@ train[c(62, 830), "Embarked"] <- "C"
 #6. Possible to infer embarkation from nationality of surname?
 #7. Missing Fares - can we build a predictive model for fares, based on
 #embarkation point, class, maybe title?
-#8. Break up title into more categories?  
+#8. Break up title into more categories?
 
+
+#9.  Married but travelling alone? Over 18, sibsp = 0, married
+    # train$marriedSolo <- 0
+    # for (i in 1:length(train$marriedSolo)) {
+    #   if (train[i, "Age"] > 18 && train[i, "SibSp"] == 0 && train[i, "Title"] == "Mrs") {
+    #     train[i, "marriedSolo"] <- 1
+    #   }
+    # }
 
 summary(train)
 glimpse(train)
+
+
+
+#Build a sample model.
+
+#Split train data into train and test, to prelim check model fit.
+trainmodel <- train %>% filter(PassengerId <= 750)
+testmodel <- train %>% filter(PassengerId > 750)
+
+#TODO: Classification Tree WIP
+# survivalModel <- tree(Survived ~ Pclass + Sex + Age + SibSp + Parch + 
+#                       Fare + Embarked + Title + 
+#                       familySize , data = trainmodel)
+# plot(survivalModel)
+# text(survivalModel, cex = .75)
+# summary(survivalModel)
+# survivalPredict <- predict(survivalModel, testmodel)
