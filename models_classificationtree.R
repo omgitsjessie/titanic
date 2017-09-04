@@ -19,11 +19,11 @@ testmodel <- train %>% filter(PassengerId > 750)
 
 #Classification Tree prediction.
 #Define survivability as the response var
-response <- train$Survived
+response <- trainmodel$Survived
 #Grow tree
 rpart.tree <- rpart(response ~ Pclass + Sex + Age + SibSp + Parch + Embarked + 
                       numRooms + cabinDeck + Title + familySize, 
-                    data = train, 
+                    data = trainmodel, 
                     method = "class", 
                     na.action=na.rpart, 
                     control = rpart.control(minsplit = 5, cp = 0.008))
@@ -43,13 +43,24 @@ mean(submit$Accuracy)
 #*******************************************************************************
 #Predict on the Real Test Set
 
+#TODO - grow tree based on the entire training set
+response2 <- train$Survived
+rpart.tree2 <- rpart(response2 ~ Pclass + Sex + Age + SibSp + Parch + Embarked + 
+                      numRooms + cabinDeck + Title + familySize, 
+                    data = train, 
+                    method = "class", 
+                    na.action=na.rpart, 
+                    control = rpart.control(minsplit = 5, cp = 0.008))
+#Plot tree
+plot_fulltree <- fancyRpartPlot(rpart.tree2)
+
 #Predict on Test Data
-PredictionTest <- predict(rpart.tree, test, type = "class")
+PredictionTest <- predict(rpart.tree2, test, type = "class")
 #To satisfy submission requirements, these col names must not change below.
 submitTest <- data.frame(PassengerID = test$PassengerId, 
                          Survived = PredictionTest)
 write.csv(submitTest, 
-          file = "~/R Projects - Data Science/titanic/data/SubmittedPredictions_2.csv", 
+          file = "~/R Projects - Data Science/titanic/data/classtree_2.csv", 
           row.names = F)
 
-#This approach scored 77.511% accuracy on the real test; not great.  Keep at it.
+#This approach scored 77.512% accuracy on the real test; not great.  Keep at it.
